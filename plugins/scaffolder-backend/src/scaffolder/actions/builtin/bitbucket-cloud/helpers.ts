@@ -85,3 +85,52 @@ export const createRepository = async (opts: {
     const repoContentsUrl = `${r.links.html.href}/src/${mainBranch}`;
     return { remoteUrl, repoContentsUrl };
   };
+
+  export const enablePipeline = async (opts: {
+    workspace: string;
+    repo: string;
+    authorization: string;
+    apiBaseUrl: string;
+  }) => {
+    const {
+      workspace,
+      repo,
+      authorization,
+      apiBaseUrl,
+    } = opts;
+  
+    const options: RequestInit = {
+      method: 'PUT',
+      body: JSON.stringify({
+        enabled: true,
+        repository: {},
+      }),
+      headers: {
+        Authorization: authorization,
+        'Content-Type': 'application/json',
+      },
+    };
+  
+    let response: Response;
+    try {
+      response = await fetch(
+        `${apiBaseUrl}/repositories/${workspace}/${repo}/pipelines_config`,
+        options,
+      );
+    } catch (e) {
+      throw new Error(`Unable to enable pipelines, ${e}`);
+    }
+  
+    if (response.status !== 200) {
+      throw new Error(
+        `Unable to enable pipelines, ${response.status} ${
+          response.statusText
+        }, ${await response.text()}`,
+      );
+    }
+  
+    const r = await response.json();
+    
+
+    return { pipelineEnabled: r.enabled };
+  };

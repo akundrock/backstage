@@ -26,7 +26,7 @@ import { getVoidLogger } from '@backstage/backend-common';
 import { PassThrough } from 'stream';
 import { initRepoAndPush } from '../helpers';
 
-describe('publish:bitbucketCloud', () => {
+describe('bitbucketCloud:repo:create', () => {
   const config = new ConfigReader({
     integrations: {
       bitbucketCloud: [

@@ -9,5 +9,5 @@ spec:
 # For local development of a template, you can reference your local templates here.
 # Examples:
 #
-#   - ./local-template/template.yaml
-#   - ../all-templates/local/template.yaml
+    - ./bitbucket-enable-pipeline/template.yaml
+# - ../all-templates/local/template.yaml

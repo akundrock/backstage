@@ -1,0 +1,36 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: bitbucket-enable-pipeline
+  title: Test Bitbucket enable pipeline template
+  description: scaffolder v1beta3 template demo publishing to bitbucket
+spec:
+  owner: backstage/techdocs-core
+  type: service
+
+  parameters:
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - bitbucket.org
+              - server.bitbucket.com
+  steps:
+
+    - id: enable-pipeline
+      name: Enable Pipeline
+      action: bitbucketCloud:pipeline:enable
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+
+  output:
+    # TODO make output work
+    links:
+      - title: Pipeline Enabled
+        url: ${{ steps.enable-pipeline.output.pipelineEnabled }}
