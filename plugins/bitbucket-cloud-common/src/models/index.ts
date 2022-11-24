@@ -50,6 +50,51 @@ export namespace Models {
   }
 
   /**
+   * An app user object.
+   * @public
+   */
+  export interface AppUser extends Account {
+    /**
+     * The user's Atlassian account ID.
+     */
+    account_id?: string;
+    /**
+     * The status of the account. Currently the only possible value is "active", but more values may be added in the future.
+     */
+    account_status?: string;
+    /**
+     * The kind of App User.
+     */
+    kind?: string;
+  }
+
+  /**
+   * An application property. It is a caller defined JSON object that Bitbucket will store and return.
+   * The `_attributes` field at its top level can be used to control who is allowed to read and update the property.
+   * The keys of the JSON object must match an allowed pattern. For details,
+   * see [Application properties](https://developer.atlassian.com/cloud/bitbucket/application-properties/).
+   * @public
+   */
+  export interface ApplicationProperty {
+    [key: string]: unknown;
+    _attributes?: Array<ApplicationPropertyAttributesEnum>;
+  }
+
+  /**
+   * @public
+   */
+  export const ApplicationPropertyAttributesEnum = {
+    Public: 'public',
+    ReadOnly: 'read_only',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type ApplicationPropertyAttributesEnum =
+    typeof ApplicationPropertyAttributesEnum[keyof typeof ApplicationPropertyAttributesEnum];
+
+  /**
    * The author of a change in a repository
    * @public
    */
@@ -149,12 +194,226 @@ export namespace Models {
     typeof BranchMergeStrategiesEnum[keyof typeof BranchMergeStrategiesEnum];
 
   /**
+   * A repository's branching model
+   * @public
+   */
+  export interface BranchingModel extends ModelObject {
+    /**
+     * The active branch types.
+     */
+    branch_types?: Set<BranchingModelBranchTypes>;
+    development?: BranchingModelDevelopment;
+    production?: BranchingModelDevelopment;
+  }
+
+  /**
+   * @public
+   */
+  export interface BranchingModelBranchTypes {
+    /**
+     * The kind of branch.
+     */
+    kind: BranchingModelBranchTypesKindEnum;
+    /**
+     * The prefix for this branch type. A branch with this prefix will be classified as per `kind`. The prefix must be a valid prefix for a branch and must always exist. It cannot be blank, empty or `null`.
+     */
+    prefix: string;
+  }
+
+  /**
+   * The kind of branch.
+   * @public
+   */
+  export const BranchingModelBranchTypesKindEnum = {
+    Feature: 'feature',
+    Bugfix: 'bugfix',
+    Release: 'release',
+    Hotfix: 'hotfix',
+  } as const;
+
+  /**
+   * The kind of branch.
+   * @public
+   */
+  export type BranchingModelBranchTypesKindEnum =
+    typeof BranchingModelBranchTypesKindEnum[keyof typeof BranchingModelBranchTypesKindEnum];
+
+  /**
+   * @public
+   */
+  export interface BranchingModelDevelopment {
+    branch?: Branch;
+    /**
+     * Name of the target branch. Will be listed here even when the target branch does not exist. Will be `null` if targeting the main branch and the repository is empty.
+     */
+    name: string;
+    /**
+     * Indicates if the setting points at an explicit branch (`false`) or tracks the main branch (`true`).
+     */
+    use_mainbranch: boolean;
+  }
+
+  /**
+   * A repository's branching model settings
+   * @public
+   */
+  export interface BranchingModelSettings extends ModelObject {
+    branch_types?: Set<BranchingModelSettingsBranchTypes>;
+    development?: BranchingModelSettingsDevelopment;
+    links?: BranchingModelSettingsLinks;
+    production?: BranchingModelSettingsProduction;
+  }
+
+  /**
+   * @public
+   */
+  export interface BranchingModelSettingsBranchTypes {
+    /**
+     * Whether the branch type is enabled or not. A disabled branch type may contain an invalid `prefix`.
+     */
+    enabled?: boolean;
+    /**
+     * The kind of the branch type.
+     */
+    kind: BranchingModelSettingsBranchTypesKindEnum;
+    /**
+     * The prefix for this branch type. A branch with this prefix will be classified as per `kind`. The `prefix` of an enabled branch type must be a valid branch prefix.Additionally, it cannot be blank, empty or `null`. The `prefix` for a disabled branch type can be empty or invalid.
+     */
+    prefix?: string;
+  }
+
+  /**
+   * The kind of the branch type.
+   * @public
+   */
+  export const BranchingModelSettingsBranchTypesKindEnum = {
+    Feature: 'feature',
+    Bugfix: 'bugfix',
+    Release: 'release',
+    Hotfix: 'hotfix',
+  } as const;
+
+  /**
+   * The kind of the branch type.
+   * @public
+   */
+  export type BranchingModelSettingsBranchTypesKindEnum =
+    typeof BranchingModelSettingsBranchTypesKindEnum[keyof typeof BranchingModelSettingsBranchTypesKindEnum];
+
+  /**
+   * @public
+   */
+  export interface BranchingModelSettingsDevelopment {
+    /**
+     * Indicates if the configured branch is valid, that is, if the configured branch actually exists currently. Is always `true` when `use_mainbranch` is `true` (even if the main branch does not exist). This field is read-only. This field is ignored when updating/creating settings.
+     */
+    is_valid?: boolean;
+    /**
+     * The configured branch. It must be `null` when `use_mainbranch` is `true`. Otherwise it must be a non-empty value. It is possible for the configured branch to not exist (e.g. it was deleted after the settings are set). In this case `is_valid` will be `false`. The branch must exist when updating/setting the `name` or an error will occur.
+     */
+    name?: string;
+    /**
+     * Indicates if the setting points at an explicit branch (`false`) or tracks the main branch (`true`). When `true` the `name` must be `null` or not provided. When `false` the `name` must contain a non-empty branch name.
+     */
+    use_mainbranch?: boolean;
+  }
+
+  /**
+   * @public
+   */
+  export interface BranchingModelSettingsLinks {
+    self?: Link;
+  }
+
+  /**
+   * @public
+   */
+  export interface BranchingModelSettingsProduction {
+    /**
+     * Indicates if branch is enabled or not.
+     */
+    enabled?: boolean;
+    /**
+     * Indicates if the configured branch is valid, that is, if the configured branch actually exists currently. Is always `true` when `use_mainbranch` is `true` (even if the main branch does not exist). This field is read-only. This field is ignored when updating/creating settings.
+     */
+    is_valid?: boolean;
+    /**
+     * The configured branch. It must be `null` when `use_mainbranch` is `true`. Otherwise it must be a non-empty value. It is possible for the configured branch to not exist (e.g. it was deleted after the settings are set). In this case `is_valid` will be `false`. The branch must exist when updating/setting the `name` or an error will occur.
+     */
+    name?: string;
+    /**
+     * Indicates if the setting points at an explicit branch (`false`) or tracks the main branch (`true`). When `true` the `name` must be `null` or not provided. When `false` the `name` must contain a non-empty branch name.
+     */
+    use_mainbranch?: boolean;
+  }
+
+  /**
+   * A branch restriction rule.
+   * @public
+   */
+  export interface Branchrestriction extends ModelObject {
+    groups?: Array<Group>;
+    users?: Array<Account>;
+  }
+
+  /**
+   * The base type for all comments. This type should be considered abstract. Each of the "commentable" resources defines its own subtypes (e.g. `issue_comment`).
+   * @public
+   */
+  export interface Comment extends ModelObject {
+    content?: BaseCommitSummary;
+    created_on?: string;
+    deleted?: boolean;
+    id?: number;
+    inline?: CommentInline;
+    links?: CommentLinks;
+    parent?: Comment;
+    updated_on?: string;
+    user?: Account;
+  }
+
+  /**
+   * @public
+   */
+  export interface CommentInline {
+    /**
+     * The comment's anchor line in the old version of the file.
+     */
+    from?: number;
+    /**
+     * The path of the file this comment is anchored to.
+     */
+    path: string;
+    /**
+     * The comment's anchor line in the new version of the file. If the 'from' line is also provided, this value will be removed.
+     */
+    to?: number;
+  }
+
+  /**
+   * @public
+   */
+  export interface CommentLinks {
+    code?: Link;
+    html?: Link;
+    self?: Link;
+  }
+
+  /**
    * A repository commit object.
    * @public
    */
   export interface Commit extends BaseCommit {
     participants?: Array<Participant>;
     repository?: Repository;
+  }
+
+  /**
+   * A commit comment.
+   * @public
+   */
+  export interface CommitComment extends Comment {
+    commit?: Commit;
   }
 
   /**
@@ -194,12 +453,879 @@ export namespace Models {
     typeof CommitFileAttributesEnum[keyof typeof CommitFileAttributesEnum];
 
   /**
+   * A commit status object.
+   * @public
+   */
+  export interface Commitstatus extends ModelObject {
+    created_on?: string;
+    /**
+     * A description of the build (e.g. "Unit tests in Bamboo")
+     */
+    description?: string;
+    /**
+     * An identifier for the status that's unique to
+     *         its type (current "build" is the only supported type) and the vendor,
+     *         e.g. BB-DEPLOY
+     */
+    key?: string;
+    links?: CommitstatusLinks;
+    /**
+     * An identifier for the build itself, e.g. BB-DEPLOY-1
+     */
+    name?: string;
+    /**
+     *
+     * The name of the ref that pointed to this commit at the time the status
+     * object was created. Note that this the ref may since have moved off of
+     * the commit. This optional field can be useful for build systems whose
+     * build triggers and configuration are branch-dependent (e.g. a Pipeline
+     * build).
+     * It is legitimate for this field to not be set, or even apply (e.g. a
+     * static linting job).
+     */
+    refname?: string;
+    /**
+     * Provides some indication of the status of this commit
+     */
+    state?: CommitstatusStateEnum;
+    updated_on?: string;
+    /**
+     * A URL linking back to the vendor or build system, for providing more information about whatever process produced this status. Accepts context variables `repository` and `commit` that Bitbucket will evaluate at runtime whenever at runtime. For example, one could use `https://foo.com/builds/{repository.full_name}` which Bitbucket will turn into https://foo.com/builds/foo/bar at render time.
+     */
+    url?: string;
+    /**
+     * The commit status' id.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * Provides some indication of the status of this commit
+   * @public
+   */
+  export const CommitstatusStateEnum = {
+    Failed: 'FAILED',
+    Successful: 'SUCCESSFUL',
+    Stopped: 'STOPPED',
+    Inprogress: 'INPROGRESS',
+  } as const;
+
+  /**
+   * Provides some indication of the status of this commit
+   * @public
+   */
+  export type CommitstatusStateEnum =
+    typeof CommitstatusStateEnum[keyof typeof CommitstatusStateEnum];
+
+  /**
+   * @public
+   */
+  export interface CommitstatusLinks {
+    commit?: Link;
+    self?: Link;
+  }
+
+  /**
+   * A component as defined in a repository's issue tracker.
+   * @public
+   */
+  export interface Component extends ModelObject {
+    id?: number;
+    links?: BranchingModelSettingsLinks;
+    name?: string;
+  }
+
+  /**
+   * @public
+   */
+  export interface DdevReport extends ModelObject {}
+
+  /**
+   * Object containing a user that is a default reviewer and the type of reviewer
+   * @public
+   */
+  export interface DefaultReviewerAndType {
+    [key: string]: unknown;
+    reviewer_type?: string;
+    type: string;
+    user?: User;
+  }
+
+  /**
+   * Represents deploy key for a repository.
+   * @public
+   */
+  export interface DeployKey extends ModelObject {
+    added_on?: string;
+    /**
+     * The comment parsed from the deploy key (if present)
+     */
+    comment?: string;
+    /**
+     * The deploy key value.
+     */
+    key?: string;
+    /**
+     * The user-defined label for the deploy key
+     */
+    label?: string;
+    last_used?: string;
+    links?: BranchingModelSettingsLinks;
+    owner?: Account;
+    repository?: Repository;
+  }
+
+  /**
+   * A Bitbucket Deployment.
+   * @public
+   */
+  export interface Deployment extends ModelObject {
+    environment?: DeploymentEnvironment;
+    release?: DeploymentRelease;
+    state?: DeploymentState;
+    /**
+     * The UUID identifying the deployment.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment.
+   * @public
+   */
+  export interface DeploymentEnvironment extends ModelObject {
+    /**
+     * The name of the environment.
+     */
+    name?: string;
+    /**
+     * The UUID identifying the environment.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment Lock.
+   * @public
+   */
+  export interface DeploymentEnvironmentLock extends ModelObject {
+    /**
+     * The UUID identifying the environment.
+     */
+    environmentUuid?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Release.
+   * @public
+   */
+  export interface DeploymentRelease extends ModelObject {
+    commit?: Commit;
+    /**
+     * The timestamp when the release was created.
+     */
+    created_on?: string;
+    /**
+     * The name of the release.
+     */
+    name?: string;
+    /**
+     * Link to the pipeline that produced the release.
+     */
+    url?: string;
+    /**
+     * The UUID identifying the release.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * The representation of the progress state of a deployment.
+   * @public
+   */
+  export interface DeploymentState extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateCompleted extends DeploymentState {
+    /**
+     * The timestamp when the deployment completed.
+     */
+    completion_date?: string;
+    deployer?: Account;
+    /**
+     * The name of deployment state (COMPLETED).
+     */
+    name?: DeploymentStateCompletedNameEnum;
+    /**
+     * The timestamp when the deployment was started.
+     */
+    start_date?: string;
+    status?: DeploymentStateCompletedStatus;
+    /**
+     * Link to the deployment result.
+     */
+    url?: string;
+  }
+
+  /**
+   * The name of deployment state (COMPLETED).
+   * @public
+   */
+  export const DeploymentStateCompletedNameEnum = {
+    Completed: 'COMPLETED',
+  } as const;
+
+  /**
+   * The name of deployment state (COMPLETED).
+   * @public
+   */
+  export type DeploymentStateCompletedNameEnum =
+    typeof DeploymentStateCompletedNameEnum[keyof typeof DeploymentStateCompletedNameEnum];
+
+  /**
+   * The status of a completed deployment.
+   * @public
+   */
+  export interface DeploymentStateCompletedStatus extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateCompletedStatusFailed
+    extends DeploymentStateCompletedStatus {
+    /**
+     * The name of the completed deployment status (FAILED).
+     */
+    name?: DeploymentStateCompletedStatusFailedNameEnum;
+  }
+
+  /**
+   * The name of the completed deployment status (FAILED).
+   * @public
+   */
+  export const DeploymentStateCompletedStatusFailedNameEnum = {
+    Failed: 'FAILED',
+  } as const;
+
+  /**
+   * The name of the completed deployment status (FAILED).
+   * @public
+   */
+  export type DeploymentStateCompletedStatusFailedNameEnum =
+    typeof DeploymentStateCompletedStatusFailedNameEnum[keyof typeof DeploymentStateCompletedStatusFailedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateCompletedStatusStopped
+    extends DeploymentStateCompletedStatus {
+    /**
+     * The name of the completed deployment status (STOPPED).
+     */
+    name?: DeploymentStateCompletedStatusStoppedNameEnum;
+  }
+
+  /**
+   * The name of the completed deployment status (STOPPED).
+   * @public
+   */
+  export const DeploymentStateCompletedStatusStoppedNameEnum = {
+    Stopped: 'STOPPED',
+  } as const;
+
+  /**
+   * The name of the completed deployment status (STOPPED).
+   * @public
+   */
+  export type DeploymentStateCompletedStatusStoppedNameEnum =
+    typeof DeploymentStateCompletedStatusStoppedNameEnum[keyof typeof DeploymentStateCompletedStatusStoppedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateCompletedStatusSuccessful
+    extends DeploymentStateCompletedStatus {
+    /**
+     * The name of the completed deployment status (SUCCESSFUL).
+     */
+    name?: DeploymentStateCompletedStatusSuccessfulNameEnum;
+  }
+
+  /**
+   * The name of the completed deployment status (SUCCESSFUL).
+   * @public
+   */
+  export const DeploymentStateCompletedStatusSuccessfulNameEnum = {
+    Successful: 'SUCCESSFUL',
+  } as const;
+
+  /**
+   * The name of the completed deployment status (SUCCESSFUL).
+   * @public
+   */
+  export type DeploymentStateCompletedStatusSuccessfulNameEnum =
+    typeof DeploymentStateCompletedStatusSuccessfulNameEnum[keyof typeof DeploymentStateCompletedStatusSuccessfulNameEnum];
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateInProgress extends DeploymentState {
+    deployer?: Account;
+    /**
+     * The name of deployment state (IN_PROGRESS).
+     */
+    name?: DeploymentStateInProgressNameEnum;
+    /**
+     * The timestamp when the deployment was started.
+     */
+    start_date?: string;
+    /**
+     * Link to the deployment result.
+     */
+    url?: string;
+  }
+
+  /**
+   * The name of deployment state (IN_PROGRESS).
+   * @public
+   */
+  export const DeploymentStateInProgressNameEnum = {
+    InProgress: 'IN_PROGRESS',
+  } as const;
+
+  /**
+   * The name of deployment state (IN_PROGRESS).
+   * @public
+   */
+  export type DeploymentStateInProgressNameEnum =
+    typeof DeploymentStateInProgressNameEnum[keyof typeof DeploymentStateInProgressNameEnum];
+
+  /**
+   * @public
+   */
+  export interface DeploymentStateUndeployed extends DeploymentState {
+    /**
+     * The name of deployment state (UNDEPLOYED).
+     */
+    name?: DeploymentStateUndeployedNameEnum;
+    /**
+     * Link to trigger the deployment.
+     */
+    trigger_url?: string;
+  }
+
+  /**
+   * The name of deployment state (UNDEPLOYED).
+   * @public
+   */
+  export const DeploymentStateUndeployedNameEnum = {
+    Undeployed: 'UNDEPLOYED',
+  } as const;
+
+  /**
+   * The name of deployment state (UNDEPLOYED).
+   * @public
+   */
+  export type DeploymentStateUndeployedNameEnum =
+    typeof DeploymentStateUndeployedNameEnum[keyof typeof DeploymentStateUndeployedNameEnum];
+
+  /**
+   * A Pipelines deployment variable.
+   * @public
+   */
+  export interface DeploymentVariable extends ModelObject {
+    /**
+     * The unique name of the variable.
+     */
+    key?: string;
+    /**
+     * If true, this variable will be treated as secured. The value will never be exposed in the logs or the REST API.
+     */
+    secured?: boolean;
+    /**
+     * The UUID identifying the variable.
+     */
+    uuid?: string;
+    /**
+     * The value of the variable. If the variable is secured, this will be empty.
+     */
+    value?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment.
+   * @public
+   */
+  export interface DeploymentsDdevDeploymentEnvironment extends ModelObject {
+    /**
+     * The name of the environment.
+     */
+    name?: string;
+    /**
+     * The UUID identifying the environment.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment Lock.
+   * @public
+   */
+  export interface DeploymentsDdevDeploymentEnvironmentLock
+    extends ModelObject {
+    /**
+     * The UUID identifying the environment.
+     */
+    environmentUuid?: string;
+  }
+
+  /**
+   * A paged list of environments
+   * @public
+   */
+  export interface DeploymentsDdevPaginatedEnvironments
+    extends Paginated<DeploymentsDdevDeploymentEnvironment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<DeploymentsDdevDeploymentEnvironment>;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment.
+   * @public
+   */
+  export interface DeploymentsStgWestDeploymentEnvironment extends ModelObject {
+    /**
+     * The name of the environment.
+     */
+    name?: string;
+    /**
+     * The UUID identifying the environment.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Bitbucket Deployment Environment Lock.
+   * @public
+   */
+  export interface DeploymentsStgWestDeploymentEnvironmentLock
+    extends ModelObject {
+    /**
+     * The UUID identifying the environment.
+     */
+    environmentUuid?: string;
+  }
+
+  /**
+   * A paged list of environments
+   * @public
+   */
+  export interface DeploymentsStgWestPaginatedEnvironments
+    extends Paginated<DeploymentsStgWestDeploymentEnvironment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<DeploymentsStgWestDeploymentEnvironment>;
+  }
+
+  /**
+   * A diffstat object that includes a summary of changes made to a file between two commits.
+   * @public
+   */
+  export interface Diffstat {
+    [key: string]: unknown;
+    lines_added?: number;
+    lines_removed?: number;
+    _new?: CommitFile;
+    old?: CommitFile;
+    status?: DiffstatStatusEnum;
+    type: string;
+  }
+
+  /**
+   * @public
+   */
+  export const DiffstatStatusEnum = {
+    Added: 'added',
+    Removed: 'removed',
+    Modified: 'modified',
+    Renamed: 'renamed',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type DiffstatStatusEnum =
+    typeof DiffstatStatusEnum[keyof typeof DiffstatStatusEnum];
+
+  /**
+   * A repository's effective branching model
+   * @public
+   */
+  export interface EffectiveRepoBranchingModel extends ModelObject {
+    /**
+     * The active branch types.
+     */
+    branch_types?: Set<BranchingModelBranchTypes>;
+    development?: BranchingModelDevelopment;
+    production?: BranchingModelDevelopment;
+  }
+
+  /**
+   * @public
+   */
+  export interface ErrorError {
+    /**
+     * Optional structured data that is endpoint-specific.
+     */
+    data?: { [key: string]: object };
+    detail?: string;
+    message: string;
+  }
+
+  /**
+   * Options for issue export.
+   * @public
+   */
+  export interface ExportOptions {
+    [key: string]: unknown;
+    include_attachments?: boolean;
+    project_key?: string;
+    project_name?: string;
+    send_email?: boolean;
+    type: string;
+  }
+
+  /**
+   * A group object
+   * @public
+   */
+  export interface Group extends ModelObject {
+    /**
+     * The concatenation of the workspace's slug and the group's slug,
+     * separated with a colon (e.g. `acme:developers`)
+     */
+    full_slug?: string;
+    links?: GroupLinks;
+    name?: string;
+    owner?: Account;
+    /**
+     * The "sluggified" version of the group's name. This contains only ASCII
+     * characters and can therefore be slightly different than the name
+     */
+    slug?: string;
+    workspace?: Workspace;
+  }
+
+  /**
+   * @public
+   */
+  export interface GroupLinks {
+    html?: Link;
+    self?: Link;
+  }
+
+  /**
+   * An event, associated with a resource or subject type.
+   * @public
+   */
+  export interface HookEvent {
+    /**
+     * The category this event belongs to.
+     */
+    category?: string;
+    /**
+     * More detailed description of the webhook event type.
+     */
+    description?: string;
+    /**
+     * The event identifier.
+     */
+    event?: HookEventEventEnum;
+    /**
+     * Summary of the webhook event type.
+     */
+    label?: string;
+  }
+
+  /**
+   * The event identifier.
+   * @public
+   */
+  export const HookEventEventEnum = {
+    RepocommitStatusUpdated: 'repo:commit_status_updated',
+    Pullrequestunapproved: 'pullrequest:unapproved',
+    Pullrequestrejected: 'pullrequest:rejected',
+    Issueupdated: 'issue:updated',
+    PullrequestchangesRequestRemoved: 'pullrequest:changes_request_removed',
+    Repodeleted: 'repo:deleted',
+    PullrequestchangesRequestCreated: 'pullrequest:changes_request_created',
+    IssuecommentCreated: 'issue:comment_created',
+    Issuecreated: 'issue:created',
+    Repoupdated: 'repo:updated',
+    PullrequestcommentCreated: 'pullrequest:comment_created',
+    Pullrequestfulfilled: 'pullrequest:fulfilled',
+    Repofork: 'repo:fork',
+    Repocreated: 'repo:created',
+    RepocommitStatusCreated: 'repo:commit_status_created',
+    Pullrequestapproved: 'pullrequest:approved',
+    PullrequestcommentDeleted: 'pullrequest:comment_deleted',
+    Pullrequestcreated: 'pullrequest:created',
+    PullrequestcommentUpdated: 'pullrequest:comment_updated',
+    Pullrequestupdated: 'pullrequest:updated',
+    Repopush: 'repo:push',
+    Repotransfer: 'repo:transfer',
+    Projectupdated: 'project:updated',
+    RepocommitCommentCreated: 'repo:commit_comment_created',
+    Repoimported: 'repo:imported',
+  } as const;
+
+  /**
+   * The event identifier.
+   * @public
+   */
+  export type HookEventEventEnum =
+    typeof HookEventEventEnum[keyof typeof HookEventEventEnum];
+
+  /**
+   * An issue.
+   * @public
+   */
+  export interface Issue extends ModelObject {
+    assignee?: Account;
+    component?: Component;
+    content?: BaseCommitSummary;
+    created_on?: string;
+    edited_on?: string;
+    id?: number;
+    kind?: IssueKindEnum;
+    links?: IssueLinks;
+    milestone?: Milestone;
+    priority?: IssuePriorityEnum;
+    reporter?: Account;
+    repository?: Repository;
+    state?: IssueStateEnum;
+    title?: string;
+    updated_on?: string;
+    version?: Version;
+    votes?: number;
+  }
+
+  /**
+   * @public
+   */
+  export const IssueKindEnum = {
+    Bug: 'bug',
+    Enhancement: 'enhancement',
+    Proposal: 'proposal',
+    Task: 'task',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type IssueKindEnum = typeof IssueKindEnum[keyof typeof IssueKindEnum];
+
+  /**
+   * @public
+   */
+  export const IssuePriorityEnum = {
+    Trivial: 'trivial',
+    Minor: 'minor',
+    Major: 'major',
+    Critical: 'critical',
+    Blocker: 'blocker',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type IssuePriorityEnum =
+    typeof IssuePriorityEnum[keyof typeof IssuePriorityEnum];
+
+  /**
+   * @public
+   */
+  export const IssueStateEnum = {
+    New: 'new',
+    Open: 'open',
+    Resolved: 'resolved',
+    OnHold: 'on hold',
+    Invalid: 'invalid',
+    Duplicate: 'duplicate',
+    Wontfix: 'wontfix',
+    Closed: 'closed',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type IssueStateEnum =
+    typeof IssueStateEnum[keyof typeof IssueStateEnum];
+
+  /**
+   * @public
+   */
+  export interface IssueLinks {
+    attachments?: Link;
+    comments?: Link;
+    html?: Link;
+    self?: Link;
+    vote?: Link;
+    watch?: Link;
+  }
+
+  /**
+   * An issue file attachment's meta data. Note this does not contain the file's actual contents.
+   * @public
+   */
+  export interface IssueAttachment extends ModelObject {
+    links?: BranchingModelSettingsLinks;
+    name?: string;
+  }
+
+  /**
+   * An issue change.
+   * @public
+   */
+  export interface IssueChange {
+    [key: string]: unknown;
+    changes?: IssueChangeChanges;
+    created_on?: string;
+    issue?: Issue;
+    links?: IssueChangeLinks;
+    message?: BaseCommitSummary;
+    name?: string;
+    type: string;
+    user?: Account;
+  }
+
+  /**
+   * @public
+   */
+  export interface IssueChangeChanges {
+    assignee?: IssueChangeChangesAssignee;
+    component?: IssueChangeChangesAssignee;
+    content?: IssueChangeChangesAssignee;
+    kind?: IssueChangeChangesAssignee;
+    milestone?: IssueChangeChangesAssignee;
+    priority?: IssueChangeChangesAssignee;
+    state?: IssueChangeChangesAssignee;
+    title?: IssueChangeChangesAssignee;
+    version?: IssueChangeChangesAssignee;
+  }
+
+  /**
+   * @public
+   */
+  export interface IssueChangeChangesAssignee {
+    _new?: string;
+    old?: string;
+  }
+
+  /**
+   * @public
+   */
+  export interface IssueChangeLinks {
+    issue?: Link;
+    self?: Link;
+  }
+
+  /**
+   * A issue comment.
+   * @public
+   */
+  export interface IssueComment extends Comment {
+    issue?: Issue;
+  }
+
+  /**
+   * The status of an import or export job
+   * @public
+   */
+  export interface IssueJobStatus {
+    /**
+     * The total number of issues already imported/exported
+     */
+    count?: number;
+    /**
+     * The percentage of issues already imported/exported
+     */
+    pct?: number;
+    /**
+     * The phase of the import/export job
+     */
+    phase?: string;
+    /**
+     * The status of the import/export job
+     */
+    status?: IssueJobStatusStatusEnum;
+    /**
+     * The total number of issues being imported/exported
+     */
+    total?: number;
+    type?: string;
+  }
+
+  /**
+   * The status of the import/export job
+   * @public
+   */
+  export const IssueJobStatusStatusEnum = {
+    Accepted: 'ACCEPTED',
+    Started: 'STARTED',
+    Running: 'RUNNING',
+    Failure: 'FAILURE',
+  } as const;
+
+  /**
+   * The status of the import/export job
+   * @public
+   */
+  export type IssueJobStatusStatusEnum =
+    typeof IssueJobStatusStatusEnum[keyof typeof IssueJobStatusStatusEnum];
+
+  /**
+   * @public
+   */
+  export interface JiraProject extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface JiraSite extends ModelObject {}
+
+  /**
    * A link to a resource related to this object.
    * @public
    */
   export interface Link {
     href?: string;
     name?: string;
+  }
+
+  /**
+   * A milestone as defined in a repository's issue tracker.
+   * @public
+   */
+  export interface Milestone extends ModelObject {
+    id?: number;
+    links?: BranchingModelSettingsLinks;
+    name?: string;
+  }
+
+  /**
+   * Base type for most resource objects. It defines the common `type` element that identifies an object's type. It also identifies the element as Swagger's `discriminator`.
+   * @public
+   */
+  export interface ModelError {
+    [key: string]: unknown;
+    error?: ErrorError;
+    type: string;
   }
 
   /**
@@ -243,6 +1369,391 @@ export namespace Models {
   }
 
   /**
+   * A paginated list of accounts.
+   * @public
+   */
+  export interface PaginatedAccounts extends Paginated<Account> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Account>;
+  }
+
+  /**
+   * A paginated list of annotations.
+   * @public
+   */
+  export interface PaginatedAnnotations extends Paginated<ReportAnnotation> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<ReportAnnotation>;
+  }
+
+  /**
+   * A paginated list of branches.
+   * @public
+   */
+  export interface PaginatedBranches extends Paginated<Branch> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Branch>;
+  }
+
+  /**
+   * A paginated list of branch restriction rules.
+   * @public
+   */
+  export interface PaginatedBranchrestrictions
+    extends Paginated<Branchrestriction> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Branchrestriction>;
+  }
+
+  /**
+   * A paginated list of commits.
+   * @public
+   */
+  export interface PaginatedChangeset extends Paginated<BaseCommit> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<BaseCommit>;
+  }
+
+  /**
+   * A paginated list of commit comments.
+   * @public
+   */
+  export interface PaginatedCommitComments extends Paginated<CommitComment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<CommitComment>;
+  }
+
+  /**
+   * A paginated list of commit status objects.
+   * @public
+   */
+  export interface PaginatedCommitstatuses extends Paginated<Commitstatus> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Commitstatus>;
+  }
+
+  /**
+   * A paginated list of issue tracker components.
+   * @public
+   */
+  export interface PaginatedComponents extends Paginated<Component> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Component>;
+  }
+
+  /**
+   * A paginated list of default reviewers with reviewer type.
+   * @public
+   */
+  export interface PaginatedDefaultReviewerAndType
+    extends Paginated<DefaultReviewerAndType> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<DefaultReviewerAndType>;
+  }
+
+  /**
+   * A paginated list of deploy keys.
+   * @public
+   */
+  export interface PaginatedDeployKeys extends Paginated<DeployKey> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<DeployKey>;
+  }
+
+  /**
+   * A paged list of deployment variables.
+   * @public
+   */
+  export interface PaginatedDeploymentVariable
+    extends Paginated<DeploymentVariable> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<DeploymentVariable>;
+  }
+
+  /**
+   * A paged list of deployments
+   * @public
+   */
+  export interface PaginatedDeployments extends Paginated<Deployment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<Deployment>;
+  }
+
+  /**
+   * A paginated list of diffstats.
+   * @public
+   */
+  export interface PaginatedDiffstats extends Paginated<Diffstat> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Diffstat>;
+  }
+
+  /**
+   * A paged list of environments
+   * @public
+   */
+  export interface PaginatedEnvironments
+    extends Paginated<DeploymentEnvironment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<DeploymentEnvironment>;
+  }
+
+  /**
+   * A paginated list of commit_file objects.
+   * @public
+   */
+  export interface PaginatedFiles extends Paginated<CommitFile> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<CommitFile>;
+  }
+
+  /**
+   * A paginated list of webhook types available to subscribe on.
+   * @public
+   */
+  export interface PaginatedHookEvents extends Paginated<HookEvent> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<HookEvent>;
+  }
+
+  /**
+   * A paginated list of issue attachments.
+   * @public
+   */
+  export interface PaginatedIssueAttachments
+    extends Paginated<IssueAttachment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<IssueAttachment>;
+  }
+
+  /**
+   * A paginated list of issue comments.
+   * @public
+   */
+  export interface PaginatedIssueComments extends Paginated<IssueComment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<IssueComment>;
+  }
+
+  /**
+   * A paginated list of issues.
+   * @public
+   */
+  export interface PaginatedIssues extends Paginated<Issue> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Issue>;
+  }
+
+  /**
+   * A paginated list of issue changes.
+   * @public
+   */
+  export interface PaginatedLogEntries extends Paginated<IssueChange> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<IssueChange>;
+  }
+
+  /**
+   * A paginated list of issue tracker milestones.
+   * @public
+   */
+  export interface PaginatedMilestones extends Paginated<Milestone> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Milestone>;
+  }
+
+  /**
+   * A paged list of pipeline caches
+   * @public
+   */
+  export interface PaginatedPipelineCaches extends Paginated<PipelineCache> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineCache>;
+  }
+
+  /**
+   * A paged list of known hosts.
+   * @public
+   */
+  export interface PaginatedPipelineKnownHosts
+    extends Paginated<PipelineKnownHost> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineKnownHost>;
+  }
+
+  /**
+   * A paged list of the executions of a schedule.
+   * @public
+   */
+  export interface PaginatedPipelineScheduleExecutions
+    extends Paginated<PipelineScheduleExecution> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineScheduleExecution>;
+  }
+
+  /**
+   * A paged list of schedules
+   * @public
+   */
+  export interface PaginatedPipelineSchedules
+    extends Paginated<PipelineSchedule> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineSchedule>;
+  }
+
+  /**
+   * A paged list of pipeline steps.
+   * @public
+   */
+  export interface PaginatedPipelineSteps extends Paginated<PipelineStep> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineStep>;
+  }
+
+  /**
+   * A paged list of variables.
+   * @public
+   */
+  export interface PaginatedPipelineVariables
+    extends Paginated<PipelineVariable> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<PipelineVariable>;
+  }
+
+  /**
+   * A paged list of pipelines
+   * @public
+   */
+  export interface PaginatedPipelines extends Paginated<Pipeline> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<Pipeline>;
+  }
+
+  /**
+   * A paginated list of project deploy keys.
+   * @public
+   */
+  export interface PaginatedProjectDeployKeys
+    extends Paginated<ProjectDeployKey> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<ProjectDeployKey>;
+  }
+
+  /**
+   * A paginated list of projects
+   * @public
+   */
+  export interface PaginatedProjects extends Paginated<Project> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Project>;
+  }
+
+  /**
+   * A paginated list of pullrequest comments.
+   * @public
+   */
+  export interface PaginatedPullrequestComments
+    extends Paginated<PullrequestComment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<PullrequestComment>;
+  }
+
+  /**
+   * A paginated list of pullrequests.
+   * @public
+   */
+  export interface PaginatedPullrequests extends Paginated<Pullrequest> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Pullrequest>;
+  }
+
+  /**
+   * A paginated list of refs.
+   * @public
+   */
+  export interface PaginatedRefs extends Paginated<Ref> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Ref>;
+  }
+
+  /**
+   * A paginated list of reports.
+   * @public
+   */
+  export interface PaginatedReports extends Paginated<Report> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<Report>;
+  }
+
+  /**
    * A paginated list of repositories.
    * @public
    */
@@ -251,6 +1762,154 @@ export namespace Models {
      * The values of the current page.
      */
     values?: Set<Repository>;
+  }
+
+  /**
+   * A paginated list of repository group permissions.
+   * @public
+   */
+  export interface PaginatedRepositoryGroupPermissions
+    extends Paginated<RepositoryGroupPermission> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<RepositoryGroupPermission>;
+  }
+
+  /**
+   * A paginated list of repository permissions.
+   * @public
+   */
+  export interface PaginatedRepositoryPermissions
+    extends Paginated<RepositoryPermission> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<RepositoryPermission>;
+  }
+
+  /**
+   * A paginated list of repository user permissions.
+   * @public
+   */
+  export interface PaginatedRepositoryUserPermissions
+    extends Paginated<RepositoryUserPermission> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<RepositoryUserPermission>;
+  }
+
+  /**
+   * A paginated list of snippet comments.
+   * @public
+   */
+  export interface PaginatedSnippetComments extends Paginated<SnippetComment> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<SnippetComment>;
+  }
+
+  /**
+   * A paginated list of snippet commits.
+   * @public
+   */
+  export interface PaginatedSnippetCommits extends Paginated<SnippetCommit> {
+    /**
+     * The values of the current page.
+     */
+    values?: Array<SnippetCommit>;
+  }
+
+  /**
+   * A paginated list of snippets.
+   * @public
+   */
+  export interface PaginatedSnippets extends Paginated<Snippet> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Snippet>;
+  }
+
+  /**
+   * A paginated list of SSH keys.
+   * @public
+   */
+  export interface PaginatedSshUserKeys extends Paginated<SshAccountKey> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<SshAccountKey>;
+  }
+
+  /**
+   * A paginated list of tags.
+   * @public
+   */
+  export interface PaginatedTags extends Paginated<Tag> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Tag>;
+  }
+
+  /**
+   * A paginated list of commit_file and/or commit_directory objects.
+   * @public
+   */
+  export interface PaginatedTreeentries extends Paginated<Treeentry> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Treeentry>;
+  }
+
+  /**
+   * A paginated list of issue tracker versions.
+   * @public
+   */
+  export interface PaginatedVersions extends Paginated<Version> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Version>;
+  }
+
+  /**
+   * A paginated list of webhook subscriptions
+   * @public
+   */
+  export interface PaginatedWebhookSubscriptions
+    extends Paginated<WebhookSubscription> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<WebhookSubscription>;
+  }
+
+  /**
+   * A paginated list of workspace memberships.
+   * @public
+   */
+  export interface PaginatedWorkspaceMemberships
+    extends Paginated<WorkspaceMembership> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<WorkspaceMembership>;
+  }
+
+  /**
+   * A paginated list of workspaces.
+   * @public
+   */
+  export interface PaginatedWorkspaces extends Paginated<Workspace> {
+    /**
+     * The values of the current page.
+     */
+    values?: Set<Workspace>;
   }
 
   /**
@@ -296,6 +1955,997 @@ export namespace Models {
    */
   export type ParticipantStateEnum =
     typeof ParticipantStateEnum[keyof typeof ParticipantStateEnum];
+
+  /**
+   * A Bitbucket Pipeline. This represents an actual pipeline result.
+   * @public
+   */
+  export interface Pipeline extends ModelObject {
+    /**
+     * The build number of the pipeline.
+     */
+    build_number?: number;
+    /**
+     * The number of build seconds used by this pipeline.
+     */
+    build_seconds_used?: number;
+    /**
+     * The timestamp when the Pipeline was completed. This is not set if the pipeline is still in progress.
+     */
+    completed_on?: string;
+    /**
+     * The timestamp when the pipeline was created.
+     */
+    created_on?: string;
+    creator?: Account;
+    repository?: Repository;
+    state?: PipelineState;
+    target?: PipelineTarget;
+    trigger?: PipelineTrigger;
+    /**
+     * The UUID identifying the pipeline.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Pipelines build number.
+   * @public
+   */
+  export interface PipelineBuildNumber extends ModelObject {
+    /**
+     * The next number that will be used as build number.
+     */
+    next?: number;
+  }
+
+  /**
+   * A representation of metadata for a pipeline cache for given repository.
+   * @public
+   */
+  export interface PipelineCache extends ModelObject {
+    /**
+     * The timestamp when the cache was created.
+     */
+    created_on?: string;
+    /**
+     * The size of the file containing the archive of the cache.
+     */
+    file_size_bytes?: number;
+    /**
+     * The name of the cache.
+     */
+    name?: string;
+    /**
+     * The path where the cache contents were retrieved from.
+     */
+    path?: string;
+    /**
+     * The UUID of the pipeline that created the cache.
+     */
+    pipeline_uuid?: string;
+    /**
+     * The uuid of the step that created the cache.
+     */
+    step_uuid?: string;
+    /**
+     * The UUID identifying the pipeline cache.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A representation of the location of pipeline cache content.
+   * @public
+   */
+  export interface PipelineCacheContentUri {
+    /**
+     * The uri for pipeline cache content.
+     */
+    uri?: string;
+  }
+
+  /**
+   * An executable pipeline command.
+   * @public
+   */
+  export interface PipelineCommand {
+    /**
+     * The executable command.
+     */
+    command?: string;
+    /**
+     * The name of the command.
+     */
+    name?: string;
+  }
+
+  /**
+   * A Bitbucket Pipelines commit target.
+   * @public
+   */
+  export interface PipelineCommitTarget extends PipelineTarget {
+    commit?: Commit;
+    selector?: PipelineSelector;
+  }
+
+  /**
+   * An error causing a pipeline failure.
+   * @public
+   */
+  export interface PipelineError extends ModelObject {
+    /**
+     * The error key.
+     */
+    key?: string;
+    /**
+     * The error message.
+     */
+    message?: string;
+  }
+
+  /**
+   * The definition of a Docker image that can be used for a Bitbucket Pipelines step execution context.
+   * @public
+   */
+  export interface PipelineImage {
+    /**
+     * The email needed to authenticate with the Docker registry. Only required when using a private Docker image.
+     */
+    email?: string;
+    /**
+     * The name of the image. If the image is hosted on DockerHub the short name can be used, otherwise the fully qualified name is required here.
+     */
+    name?: string;
+    /**
+     * The password needed to authenticate with the Docker registry. Only required when using a private Docker image.
+     */
+    password?: string;
+    /**
+     * The username needed to authenticate with the Docker registry. Only required when using a private Docker image.
+     */
+    username?: string;
+  }
+
+  /**
+   * A Pipelines known host.
+   * @public
+   */
+  export interface PipelineKnownHost extends ModelObject {
+    /**
+     * The hostname of the known host.
+     */
+    hostname?: string;
+    public_key?: PipelineSshPublicKey;
+    /**
+     * The UUID identifying the known host.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Bitbucket Pipelines reference target.
+   * @public
+   */
+  export interface PipelineRefTarget extends PipelineTarget {
+    commit?: Commit;
+    /**
+     * The name of the reference.
+     */
+    ref_name?: string;
+    /**
+     * The type of reference (branch/tag).
+     */
+    ref_type?: PipelineRefTargetRefTypeEnum;
+    selector?: PipelineSelector;
+  }
+
+  /**
+   * The type of reference (branch/tag).
+   * @public
+   */
+  export const PipelineRefTargetRefTypeEnum = {
+    Branch: 'branch',
+    Tag: 'tag',
+    NamedBranch: 'named_branch',
+    Bookmark: 'bookmark',
+  } as const;
+
+  /**
+   * The type of reference (branch/tag).
+   * @public
+   */
+  export type PipelineRefTargetRefTypeEnum =
+    typeof PipelineRefTargetRefTypeEnum[keyof typeof PipelineRefTargetRefTypeEnum];
+
+  /**
+   * A Pipelines schedule.
+   * @public
+   */
+  export interface PipelineSchedule extends ModelObject {
+    /**
+     * The timestamp when the schedule was created.
+     */
+    created_on?: string;
+    /**
+     * The cron expression that the schedule applies.
+     */
+    cron_pattern?: string;
+    /**
+     * Whether the schedule is enabled.
+     */
+    enabled?: boolean;
+    selector?: PipelineSelector;
+    target?: PipelineTarget;
+    /**
+     * The timestamp when the schedule was updated.
+     */
+    updated_on?: string;
+    /**
+     * The UUID identifying the schedule.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * A Pipelines schedule execution.
+   * @public
+   */
+  export interface PipelineScheduleExecution extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface PipelineScheduleExecutionErrored
+    extends PipelineScheduleExecution {
+    error?: PipelineError;
+  }
+
+  /**
+   * @public
+   */
+  export interface PipelineScheduleExecutionExecuted
+    extends PipelineScheduleExecution {
+    pipeline?: Pipeline;
+  }
+
+  /**
+   * A representation of the selector that was used to identify the pipeline in the YML file.
+   * @public
+   */
+  export interface PipelineSelector {
+    [key: string]: unknown;
+    /**
+     * The name of the matching pipeline definition.
+     */
+    pattern?: string;
+    /**
+     * The type of selector.
+     */
+    type?: PipelineSelectorTypeEnum;
+  }
+
+  /**
+   * The type of selector.
+   * @public
+   */
+  export const PipelineSelectorTypeEnum = {
+    Branches: 'branches',
+    Tags: 'tags',
+    Bookmarks: 'bookmarks',
+    Default: 'default',
+    Custom: 'custom',
+  } as const;
+
+  /**
+   * The type of selector.
+   * @public
+   */
+  export type PipelineSelectorTypeEnum =
+    typeof PipelineSelectorTypeEnum[keyof typeof PipelineSelectorTypeEnum];
+
+  /**
+   * A Pipelines SSH key pair.
+   * @public
+   */
+  export interface PipelineSshKeyPair extends ModelObject {
+    /**
+     * The SSH private key. This value will be empty when retrieving the SSH key pair.
+     */
+    private_key?: string;
+    /**
+     * The SSH public key.
+     */
+    public_key?: string;
+  }
+
+  /**
+   * A Pipelines known host public key.
+   * @public
+   */
+  export interface PipelineSshPublicKey extends ModelObject {
+    /**
+     * The base64 encoded public key.
+     */
+    key?: string;
+    /**
+     * The type of the public key.
+     */
+    key_type?: string;
+    /**
+     * The MD5 fingerprint of the public key.
+     */
+    md5_fingerprint?: string;
+    /**
+     * The SHA-256 fingerprint of the public key.
+     */
+    sha256_fingerprint?: string;
+  }
+
+  /**
+   * The representation of the progress state of a pipeline.
+   * @public
+   */
+  export interface PipelineState extends ModelObject {}
+
+  /**
+   * A Bitbucket Pipelines COMPLETED pipeline state.
+   * @public
+   */
+  export interface PipelineStateCompleted extends PipelineState {
+    /**
+     * The name of pipeline state (COMPLETED).
+     */
+    name?: PipelineStateCompletedNameEnum;
+    result?: PipelineStateCompletedResult;
+  }
+
+  /**
+   * The name of pipeline state (COMPLETED).
+   * @public
+   */
+  export const PipelineStateCompletedNameEnum = {
+    Completed: 'COMPLETED',
+  } as const;
+
+  /**
+   * The name of pipeline state (COMPLETED).
+   * @public
+   */
+  export type PipelineStateCompletedNameEnum =
+    typeof PipelineStateCompletedNameEnum[keyof typeof PipelineStateCompletedNameEnum];
+
+  /**
+   * A Bitbucket Pipelines ERROR pipeline result.
+   * @public
+   */
+  export interface PipelineStateCompletedError
+    extends PipelineStateCompletedResult {
+    error?: PipelineError;
+    /**
+     * The name of the result (ERROR)
+     */
+    name?: PipelineStateCompletedErrorNameEnum;
+  }
+
+  /**
+   * The name of the result (ERROR)
+   * @public
+   */
+  export const PipelineStateCompletedErrorNameEnum = {
+    Error: 'ERROR',
+  } as const;
+
+  /**
+   * The name of the result (ERROR)
+   * @public
+   */
+  export type PipelineStateCompletedErrorNameEnum =
+    typeof PipelineStateCompletedErrorNameEnum[keyof typeof PipelineStateCompletedErrorNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStateCompletedExpired
+    extends PipelineStateCompletedResult {
+    /**
+     * The name of the stopped result (EXPIRED).
+     */
+    name?: PipelineStateCompletedExpiredNameEnum;
+  }
+
+  /**
+   * The name of the stopped result (EXPIRED).
+   * @public
+   */
+  export const PipelineStateCompletedExpiredNameEnum = {
+    Expired: 'EXPIRED',
+  } as const;
+
+  /**
+   * The name of the stopped result (EXPIRED).
+   * @public
+   */
+  export type PipelineStateCompletedExpiredNameEnum =
+    typeof PipelineStateCompletedExpiredNameEnum[keyof typeof PipelineStateCompletedExpiredNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStateCompletedFailed
+    extends PipelineStateCompletedResult {
+    /**
+     * The name of the failed result (FAILED).
+     */
+    name?: PipelineStateCompletedFailedNameEnum;
+  }
+
+  /**
+   * The name of the failed result (FAILED).
+   * @public
+   */
+  export const PipelineStateCompletedFailedNameEnum = {
+    Failed: 'FAILED',
+  } as const;
+
+  /**
+   * The name of the failed result (FAILED).
+   * @public
+   */
+  export type PipelineStateCompletedFailedNameEnum =
+    typeof PipelineStateCompletedFailedNameEnum[keyof typeof PipelineStateCompletedFailedNameEnum];
+
+  /**
+   * A result of a completed pipeline state.
+   * @public
+   */
+  export interface PipelineStateCompletedResult extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface PipelineStateCompletedStopped
+    extends PipelineStateCompletedResult {
+    /**
+     * The name of the stopped result (STOPPED).
+     */
+    name?: PipelineStateCompletedStoppedNameEnum;
+  }
+
+  /**
+   * The name of the stopped result (STOPPED).
+   * @public
+   */
+  export const PipelineStateCompletedStoppedNameEnum = {
+    Stopped: 'STOPPED',
+  } as const;
+
+  /**
+   * The name of the stopped result (STOPPED).
+   * @public
+   */
+  export type PipelineStateCompletedStoppedNameEnum =
+    typeof PipelineStateCompletedStoppedNameEnum[keyof typeof PipelineStateCompletedStoppedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStateCompletedSuccessful
+    extends PipelineStateCompletedResult {
+    /**
+     * The name of the successful result (SUCCESSFUL).
+     */
+    name?: PipelineStateCompletedSuccessfulNameEnum;
+  }
+
+  /**
+   * The name of the successful result (SUCCESSFUL).
+   * @public
+   */
+  export const PipelineStateCompletedSuccessfulNameEnum = {
+    Successful: 'SUCCESSFUL',
+  } as const;
+
+  /**
+   * The name of the successful result (SUCCESSFUL).
+   * @public
+   */
+  export type PipelineStateCompletedSuccessfulNameEnum =
+    typeof PipelineStateCompletedSuccessfulNameEnum[keyof typeof PipelineStateCompletedSuccessfulNameEnum];
+
+  /**
+   * A Bitbucket Pipelines IN_PROGRESS pipeline state.
+   * @public
+   */
+  export interface PipelineStateInProgress extends PipelineState {
+    /**
+     * The name of pipeline state (IN_PROGRESS).
+     */
+    name?: PipelineStateInProgressNameEnum;
+    stage?: PipelineStateInProgressStage;
+  }
+
+  /**
+   * The name of pipeline state (IN_PROGRESS).
+   * @public
+   */
+  export const PipelineStateInProgressNameEnum = {
+    InProgress: 'IN_PROGRESS',
+  } as const;
+
+  /**
+   * The name of pipeline state (IN_PROGRESS).
+   * @public
+   */
+  export type PipelineStateInProgressNameEnum =
+    typeof PipelineStateInProgressNameEnum[keyof typeof PipelineStateInProgressNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStateInProgressPaused
+    extends PipelineStateInProgressStage {
+    /**
+     * The name of the stage (PAUSED)
+     */
+    name?: PipelineStateInProgressPausedNameEnum;
+  }
+
+  /**
+   * The name of the stage (PAUSED)
+   * @public
+   */
+  export const PipelineStateInProgressPausedNameEnum = {
+    Paused: 'PAUSED',
+  } as const;
+
+  /**
+   * The name of the stage (PAUSED)
+   * @public
+   */
+  export type PipelineStateInProgressPausedNameEnum =
+    typeof PipelineStateInProgressPausedNameEnum[keyof typeof PipelineStateInProgressPausedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStateInProgressRunning
+    extends PipelineStateInProgressStage {
+    /**
+     * The name of the stage (RUNNING)
+     */
+    name?: PipelineStateInProgressRunningNameEnum;
+  }
+
+  /**
+   * The name of the stage (RUNNING)
+   * @public
+   */
+  export const PipelineStateInProgressRunningNameEnum = {
+    Running: 'RUNNING',
+  } as const;
+
+  /**
+   * The name of the stage (RUNNING)
+   * @public
+   */
+  export type PipelineStateInProgressRunningNameEnum =
+    typeof PipelineStateInProgressRunningNameEnum[keyof typeof PipelineStateInProgressRunningNameEnum];
+
+  /**
+   * A result of an in progress pipeline state.
+   * @public
+   */
+  export interface PipelineStateInProgressStage extends ModelObject {}
+
+  /**
+   * A Bitbucket Pipelines PENDING pipeline state.
+   * @public
+   */
+  export interface PipelineStatePending extends PipelineState {
+    /**
+     * The name of pipeline state (PENDING).
+     */
+    name?: PipelineStatePendingNameEnum;
+  }
+
+  /**
+   * The name of pipeline state (PENDING).
+   * @public
+   */
+  export const PipelineStatePendingNameEnum = {
+    Pending: 'PENDING',
+  } as const;
+
+  /**
+   * The name of pipeline state (PENDING).
+   * @public
+   */
+  export type PipelineStatePendingNameEnum =
+    typeof PipelineStatePendingNameEnum[keyof typeof PipelineStatePendingNameEnum];
+
+  /**
+   * A step of a Bitbucket pipeline. This represents the actual result of the step execution.
+   * @public
+   */
+  export interface PipelineStep extends ModelObject {
+    /**
+     * The timestamp when the step execution was completed. This is not set if the step is still in progress.
+     */
+    completed_on?: string;
+    image?: PipelineImage;
+    /**
+     * The list of build commands. These commands are executed in the build container.
+     */
+    script_commands?: Array<PipelineCommand>;
+    /**
+     * The list of commands that are executed as part of the setup phase of the build. These commands are executed outside the build container.
+     */
+    setup_commands?: Array<PipelineCommand>;
+    /**
+     * The timestamp when the step execution was started. This is not set when the step hasn't executed yet.
+     */
+    started_on?: string;
+    state?: PipelineStepState;
+    /**
+     * The UUID identifying the step.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * An error causing a step failure.
+   * @public
+   */
+  export interface PipelineStepError extends ModelObject {
+    /**
+     * The error key.
+     */
+    key?: string;
+    /**
+     * The error message.
+     */
+    message?: string;
+  }
+
+  /**
+   * The representation of the progress state of a pipeline step.
+   * @public
+   */
+  export interface PipelineStepState extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompleted extends PipelineStepState {
+    /**
+     * The name of pipeline step state (COMPLETED).
+     */
+    name?: PipelineStepStateCompletedNameEnum;
+    result?: PipelineStepStateCompletedResult;
+  }
+
+  /**
+   * The name of pipeline step state (COMPLETED).
+   * @public
+   */
+  export const PipelineStepStateCompletedNameEnum = {
+    Completed: 'COMPLETED',
+  } as const;
+
+  /**
+   * The name of pipeline step state (COMPLETED).
+   * @public
+   */
+  export type PipelineStepStateCompletedNameEnum =
+    typeof PipelineStepStateCompletedNameEnum[keyof typeof PipelineStepStateCompletedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedError
+    extends PipelineStepStateCompletedResult {
+    error?: PipelineStepError;
+    /**
+     * The name of the result (ERROR)
+     */
+    name?: PipelineStepStateCompletedErrorNameEnum;
+  }
+
+  /**
+   * The name of the result (ERROR)
+   * @public
+   */
+  export const PipelineStepStateCompletedErrorNameEnum = {
+    Error: 'ERROR',
+  } as const;
+
+  /**
+   * The name of the result (ERROR)
+   * @public
+   */
+  export type PipelineStepStateCompletedErrorNameEnum =
+    typeof PipelineStepStateCompletedErrorNameEnum[keyof typeof PipelineStepStateCompletedErrorNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedExpired
+    extends PipelineStepStateCompletedResult {
+    /**
+     * The name of the result (EXPIRED)
+     */
+    name?: PipelineStepStateCompletedExpiredNameEnum;
+  }
+
+  /**
+   * The name of the result (EXPIRED)
+   * @public
+   */
+  export const PipelineStepStateCompletedExpiredNameEnum = {
+    Expired: 'EXPIRED',
+  } as const;
+
+  /**
+   * The name of the result (EXPIRED)
+   * @public
+   */
+  export type PipelineStepStateCompletedExpiredNameEnum =
+    typeof PipelineStepStateCompletedExpiredNameEnum[keyof typeof PipelineStepStateCompletedExpiredNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedFailed
+    extends PipelineStepStateCompletedResult {
+    /**
+     * The name of the result (FAILED)
+     */
+    name?: PipelineStepStateCompletedFailedNameEnum;
+  }
+
+  /**
+   * The name of the result (FAILED)
+   * @public
+   */
+  export const PipelineStepStateCompletedFailedNameEnum = {
+    Failed: 'FAILED',
+  } as const;
+
+  /**
+   * The name of the result (FAILED)
+   * @public
+   */
+  export type PipelineStepStateCompletedFailedNameEnum =
+    typeof PipelineStepStateCompletedFailedNameEnum[keyof typeof PipelineStepStateCompletedFailedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedNotRun
+    extends PipelineStepStateCompletedResult {
+    /**
+     * The name of the result (NOT_RUN)
+     */
+    name?: PipelineStepStateCompletedNotRunNameEnum;
+  }
+
+  /**
+   * The name of the result (NOT_RUN)
+   * @public
+   */
+  export const PipelineStepStateCompletedNotRunNameEnum = {
+    NotRun: 'NOT_RUN',
+  } as const;
+
+  /**
+   * The name of the result (NOT_RUN)
+   * @public
+   */
+  export type PipelineStepStateCompletedNotRunNameEnum =
+    typeof PipelineStepStateCompletedNotRunNameEnum[keyof typeof PipelineStepStateCompletedNotRunNameEnum];
+
+  /**
+   * A result of a completed pipeline step state.
+   * @public
+   */
+  export interface PipelineStepStateCompletedResult extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedStopped
+    extends PipelineStepStateCompletedResult {
+    /**
+     * The name of the result (STOPPED)
+     */
+    name?: PipelineStepStateCompletedStoppedNameEnum;
+  }
+
+  /**
+   * The name of the result (STOPPED)
+   * @public
+   */
+  export const PipelineStepStateCompletedStoppedNameEnum = {
+    Stopped: 'STOPPED',
+  } as const;
+
+  /**
+   * The name of the result (STOPPED)
+   * @public
+   */
+  export type PipelineStepStateCompletedStoppedNameEnum =
+    typeof PipelineStepStateCompletedStoppedNameEnum[keyof typeof PipelineStepStateCompletedStoppedNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateCompletedSuccessful
+    extends PipelineStepStateCompletedResult {
+    /**
+     * The name of the result (SUCCESSFUL)
+     */
+    name?: PipelineStepStateCompletedSuccessfulNameEnum;
+  }
+
+  /**
+   * The name of the result (SUCCESSFUL)
+   * @public
+   */
+  export const PipelineStepStateCompletedSuccessfulNameEnum = {
+    Successful: 'SUCCESSFUL',
+  } as const;
+
+  /**
+   * The name of the result (SUCCESSFUL)
+   * @public
+   */
+  export type PipelineStepStateCompletedSuccessfulNameEnum =
+    typeof PipelineStepStateCompletedSuccessfulNameEnum[keyof typeof PipelineStepStateCompletedSuccessfulNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateInProgress extends PipelineStepState {
+    /**
+     * The name of pipeline step state (IN_PROGRESS).
+     */
+    name?: PipelineStepStateInProgressNameEnum;
+  }
+
+  /**
+   * The name of pipeline step state (IN_PROGRESS).
+   * @public
+   */
+  export const PipelineStepStateInProgressNameEnum = {
+    InProgress: 'IN_PROGRESS',
+  } as const;
+
+  /**
+   * The name of pipeline step state (IN_PROGRESS).
+   * @public
+   */
+  export type PipelineStepStateInProgressNameEnum =
+    typeof PipelineStepStateInProgressNameEnum[keyof typeof PipelineStepStateInProgressNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStatePending extends PipelineStepState {
+    /**
+     * The name of pipeline step state (PENDING).
+     */
+    name?: PipelineStepStatePendingNameEnum;
+  }
+
+  /**
+   * The name of pipeline step state (PENDING).
+   * @public
+   */
+  export const PipelineStepStatePendingNameEnum = {
+    Pending: 'PENDING',
+  } as const;
+
+  /**
+   * The name of pipeline step state (PENDING).
+   * @public
+   */
+  export type PipelineStepStatePendingNameEnum =
+    typeof PipelineStepStatePendingNameEnum[keyof typeof PipelineStepStatePendingNameEnum];
+
+  /**
+   * @public
+   */
+  export interface PipelineStepStateReady extends PipelineStepState {
+    /**
+     * The name of pipeline step state (READY).
+     */
+    name?: PipelineStepStateReadyNameEnum;
+  }
+
+  /**
+   * The name of pipeline step state (READY).
+   * @public
+   */
+  export const PipelineStepStateReadyNameEnum = {
+    Ready: 'READY',
+  } as const;
+
+  /**
+   * The name of pipeline step state (READY).
+   * @public
+   */
+  export type PipelineStepStateReadyNameEnum =
+    typeof PipelineStepStateReadyNameEnum[keyof typeof PipelineStepStateReadyNameEnum];
+
+  /**
+   * A representation of the target that a pipeline executes on.
+   * @public
+   */
+  export interface PipelineTarget extends ModelObject {}
+
+  /**
+   * A representation of the trigger used for a pipeline.
+   * @public
+   */
+  export interface PipelineTrigger extends ModelObject {}
+
+  /**
+   * A Bitbucket Pipelines MANUAL trigger.
+   * @public
+   */
+  export interface PipelineTriggerManual extends PipelineTrigger {}
+
+  /**
+   * A Bitbucket Pipelines PUSH trigger.
+   * @public
+   */
+  export interface PipelineTriggerPush extends PipelineTrigger {}
+
+  /**
+   * A Pipelines variable.
+   * @public
+   */
+  export interface PipelineVariable extends ModelObject {
+    /**
+     * The unique name of the variable.
+     */
+    key?: string;
+    /**
+     * If true, this variable will be treated as secured. The value will never be exposed in the logs or the REST API.
+     */
+    secured?: boolean;
+    /**
+     * The UUID identifying the variable.
+     */
+    uuid?: string;
+    /**
+     * The value of the variable. If the variable is secured, this will be empty.
+     */
+    value?: string;
+  }
+
+  /**
+   * The Pipelines configuration for a repository.
+   * @public
+   */
+  export interface PipelinesConfig extends ModelObject {
+    /**
+     * Whether Pipelines is enabled for the repository.
+     */
+    enabled?: boolean;
+    repository?: Repository;
+  }
+
+  /**
+   * @public
+   */
+  export interface PipelinesDdevPipelineStep extends ModelObject {}
+
+  /**
+   * @public
+   */
+  export interface PipelinesStgWestPipelineStep extends ModelObject {}
 
   /**
    * A Bitbucket project.
@@ -344,6 +2994,271 @@ export namespace Models {
   }
 
   /**
+   * A project's branching model
+   * @public
+   */
+  export interface ProjectBranchingModel extends ModelObject {
+    /**
+     * The active branch types.
+     */
+    branch_types?: Set<BranchingModelBranchTypes>;
+    development?: ProjectBranchingModelDevelopment;
+    production?: ProjectBranchingModelDevelopment;
+  }
+
+  /**
+   * @public
+   */
+  export interface ProjectBranchingModelDevelopment {
+    /**
+     * Name of the target branch. If inherited by a repository, it will default to the main branch if the specified branch does not exist.
+     */
+    name: string;
+    /**
+     * Indicates if the setting points at an explicit branch (`false`) or tracks the main branch (`true`).
+     */
+    use_mainbranch: boolean;
+  }
+
+  /**
+   * Represents deploy key for a project.
+   * @public
+   */
+  export interface ProjectDeployKey extends ModelObject {
+    added_on?: string;
+    /**
+     * The comment parsed from the deploy key (if present)
+     */
+    comment?: string;
+    created_by?: Account;
+    /**
+     * The deploy key value.
+     */
+    key?: string;
+    /**
+     * The user-defined label for the deploy key
+     */
+    label?: string;
+    last_used?: string;
+    links?: BranchingModelSettingsLinks;
+    project?: Project;
+  }
+
+  /**
+   * @public
+   */
+  export interface PullRequestBranch {
+    /**
+     * The default merge strategy, when this endpoint is the destination of the pull request.
+     */
+    default_merge_strategy?: string;
+    /**
+     * Available merge strategies, when this endpoint is the destination of the pull request.
+     */
+    merge_strategies?: Array<PullRequestBranchMergeStrategiesEnum>;
+    name?: string;
+  }
+
+  /**
+   * Available merge strategies, when this endpoint is the destination of the pull request.
+   * @public
+   */
+  export const PullRequestBranchMergeStrategiesEnum = {
+    MergeCommit: 'merge_commit',
+    Squash: 'squash',
+    FastForward: 'fast_forward',
+  } as const;
+
+  /**
+   * Available merge strategies, when this endpoint is the destination of the pull request.
+   * @public
+   */
+  export type PullRequestBranchMergeStrategiesEnum =
+    typeof PullRequestBranchMergeStrategiesEnum[keyof typeof PullRequestBranchMergeStrategiesEnum];
+
+  /**
+   * @public
+   */
+  export interface PullRequestCommit {
+    hash?: string;
+  }
+
+  /**
+   * A pull request object.
+   * @public
+   */
+  export interface Pullrequest extends ModelObject {
+    author?: Account;
+    /**
+     * A boolean flag indicating if merging the pull request closes the source branch.
+     */
+    close_source_branch?: boolean;
+    closed_by?: Account;
+    /**
+     * The number of comments for a specific pull request.
+     */
+    comment_count?: number;
+    /**
+     * The ISO8601 timestamp the request was created.
+     */
+    created_on?: string;
+    destination?: PullrequestEndpoint;
+    /**
+     * The pull request's unique ID. Note that pull request IDs are only unique within their associated repository.
+     */
+    id?: number;
+    links?: PullrequestLinks;
+    merge_commit?: PullRequestCommit;
+    /**
+     *         The list of users that are collaborating on this pull request.
+     *         Collaborators are user that:
+     *
+     *         * are added to the pull request as a reviewer (part of the reviewers
+     *           list)
+     *         * are not explicit reviewers, but have commented on the pull request
+     *         * are not explicit reviewers, but have approved the pull request
+     *
+     *         Each user is wrapped in an object that indicates the user's role and
+     *         whether they have approved the pull request. For performance reasons,
+     *         the API only returns this list when an API requests a pull request by
+     *         id.
+     *
+     */
+    participants?: Array<Participant>;
+    /**
+     * Explains why a pull request was declined. This field is only applicable to pull requests in rejected state.
+     */
+    reason?: string;
+    rendered?: RenderedPullRequestMarkup;
+    /**
+     * The list of users that were added as reviewers on this pull request when it was created. For performance reasons, the API only includes this list on a pull request's `self` URL.
+     */
+    reviewers?: Array<Account>;
+    source?: PullrequestEndpoint;
+    /**
+     * The pull request's current status.
+     */
+    state?: PullrequestStateEnum;
+    summary?: BaseCommitSummary;
+    /**
+     * The number of open tasks for a specific pull request.
+     */
+    task_count?: number;
+    /**
+     * Title of the pull request.
+     */
+    title?: string;
+    /**
+     * The ISO8601 timestamp the request was last updated.
+     */
+    updated_on?: string;
+  }
+
+  /**
+   * The pull request's current status.
+   * @public
+   */
+  export const PullrequestStateEnum = {
+    Open: 'OPEN',
+    Merged: 'MERGED',
+    Declined: 'DECLINED',
+    Superseded: 'SUPERSEDED',
+  } as const;
+
+  /**
+   * The pull request's current status.
+   * @public
+   */
+  export type PullrequestStateEnum =
+    typeof PullrequestStateEnum[keyof typeof PullrequestStateEnum];
+
+  /**
+   * @public
+   */
+  export interface PullrequestLinks {
+    activity?: Link;
+    approve?: Link;
+    comments?: Link;
+    commits?: Link;
+    decline?: Link;
+    diff?: Link;
+    diffstat?: Link;
+    html?: Link;
+    merge?: Link;
+    self?: Link;
+  }
+
+  /**
+   * A pullrequest comment.
+   * @public
+   */
+  export interface PullrequestComment extends Comment {
+    pullrequest?: Pullrequest;
+  }
+
+  /**
+   * @public
+   */
+  export interface PullrequestEndpoint {
+    branch?: PullRequestBranch;
+    commit?: PullRequestCommit;
+    repository?: Repository;
+  }
+
+  /**
+   * The metadata that describes a pull request merge.
+   * @public
+   */
+  export interface PullrequestMergeParameters {
+    [key: string]: unknown;
+    /**
+     * Whether the source branch should be deleted. If this is not provided, we fallback to the value used when the pull request was created, which defaults to False
+     */
+    close_source_branch?: boolean;
+    /**
+     * The merge strategy that will be used to merge the pull request.
+     */
+    merge_strategy?: PullrequestMergeParametersMergeStrategyEnum;
+    /**
+     * The commit message that will be used on the resulting commit.
+     */
+    message?: string;
+    type: string;
+  }
+
+  /**
+   * The merge strategy that will be used to merge the pull request.
+   * @public
+   */
+  export const PullrequestMergeParametersMergeStrategyEnum = {
+    MergeCommit: 'merge_commit',
+    Squash: 'squash',
+    FastForward: 'fast_forward',
+  } as const;
+
+  /**
+   * The merge strategy that will be used to merge the pull request.
+   * @public
+   */
+  export type PullrequestMergeParametersMergeStrategyEnum =
+    typeof PullrequestMergeParametersMergeStrategyEnum[keyof typeof PullrequestMergeParametersMergeStrategyEnum];
+
+  /**
+   * A ref object, representing a branch or tag in a repository.
+   * @public
+   */
+  export interface Ref {
+    [key: string]: unknown;
+    links?: RefLinks;
+    /**
+     * The name of the ref.
+     */
+    name?: string;
+    target?: Commit;
+    type: string;
+  }
+
+  /**
    * @public
    */
   export interface RefLinks {
@@ -351,6 +3266,258 @@ export namespace Models {
     html?: Link;
     self?: Link;
   }
+
+  /**
+   * User provided pull request text, interpreted in a markup language and rendered in HTML
+   * @public
+   */
+  export interface RenderedPullRequestMarkup {
+    description?: BaseCommitSummary;
+    reason?: BaseCommitSummary;
+    title?: BaseCommitSummary;
+  }
+
+  /**
+   * A report for a commit.
+   * @public
+   */
+  export interface Report extends ModelObject {
+    /**
+     * The timestamp when the report was created.
+     */
+    created_on?: string;
+    /**
+     * An array of data fields to display information on the report. Maximum 10.
+     */
+    data?: Array<ReportData>;
+    /**
+     * A string to describe the purpose of the report.
+     */
+    details?: string;
+    /**
+     * ID of the report provided by the report creator. It can be used to identify the report as an alternative to it's generated uuid. It is not used by Bitbucket, but only by the report creator for updating or deleting this specific report. Needs to be unique.
+     */
+    external_id?: string;
+    /**
+     * A URL linking to the results of the report in an external tool.
+     */
+    link?: string;
+    /**
+     * A URL to the report logo. If none is provided, the default insights logo will be used.
+     */
+    logo_url?: string;
+    /**
+     * If enabled, a remote link is created in Jira for the issue associated with the commit the report belongs to.
+     */
+    remote_link_enabled?: boolean;
+    /**
+     * The type of the report.
+     */
+    report_type?: ReportReportTypeEnum;
+    /**
+     * A string to describe the tool or company who created the report.
+     */
+    reporter?: string;
+    /**
+     * The state of the report. May be set to PENDING and later updated.
+     */
+    result?: ReportResultEnum;
+    /**
+     * The title of the report.
+     */
+    title?: string;
+    /**
+     * The timestamp when the report was updated.
+     */
+    updated_on?: string;
+    /**
+     * The UUID that can be used to identify the report.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * The type of the report.
+   * @public
+   */
+  export const ReportReportTypeEnum = {
+    Security: 'SECURITY',
+    Coverage: 'COVERAGE',
+    Test: 'TEST',
+    Bug: 'BUG',
+  } as const;
+
+  /**
+   * The type of the report.
+   * @public
+   */
+  export type ReportReportTypeEnum =
+    typeof ReportReportTypeEnum[keyof typeof ReportReportTypeEnum];
+
+  /**
+   * The state of the report. May be set to PENDING and later updated.
+   * @public
+   */
+  export const ReportResultEnum = {
+    Passed: 'PASSED',
+    Failed: 'FAILED',
+    Pending: 'PENDING',
+  } as const;
+
+  /**
+   * The state of the report. May be set to PENDING and later updated.
+   * @public
+   */
+  export type ReportResultEnum =
+    typeof ReportResultEnum[keyof typeof ReportResultEnum];
+
+  /**
+   * A report for a commit.
+   * @public
+   */
+  export interface ReportAnnotation extends ModelObject {
+    /**
+     * The type of the report.
+     */
+    annotation_type?: ReportAnnotationAnnotationTypeEnum;
+    /**
+     * The timestamp when the report was created.
+     */
+    created_on?: string;
+    /**
+     * The details to show to users when clicking on the annotation.
+     */
+    details?: string;
+    /**
+     * ID of the annotation provided by the annotation creator. It can be used to identify the annotation as an alternative to it's generated uuid. It is not used by Bitbucket, but only by the annotation creator for updating or deleting this specific annotation. Needs to be unique.
+     */
+    external_id?: string;
+    /**
+     * The line number that the annotation should belong to. If no line number is provided, then it will default to 0 and in a pull request it will appear at the top of the file specified by the path field.
+     */
+    line?: number;
+    /**
+     * A URL linking to the annotation in an external tool.
+     */
+    link?: string;
+    /**
+     * The path of the file on which this annotation should be placed. This is the path of the file relative to the git repository. If no path is provided, then it will appear in the overview modal on all pull requests where the tip of the branch is the given commit, regardless of which files were modified.
+     */
+    path?: string;
+    /**
+     * The state of the report. May be set to PENDING and later updated.
+     */
+    result?: ReportAnnotationResultEnum;
+    /**
+     * The severity of the annotation.
+     */
+    severity?: ReportAnnotationSeverityEnum;
+    /**
+     * The message to display to users.
+     */
+    summary?: string;
+    /**
+     * The timestamp when the report was updated.
+     */
+    updated_on?: string;
+    /**
+     * The UUID that can be used to identify the annotation.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * The type of the report.
+   * @public
+   */
+  export const ReportAnnotationAnnotationTypeEnum = {
+    Vulnerability: 'VULNERABILITY',
+    CodeSmell: 'CODE_SMELL',
+    Bug: 'BUG',
+  } as const;
+
+  /**
+   * The type of the report.
+   * @public
+   */
+  export type ReportAnnotationAnnotationTypeEnum =
+    typeof ReportAnnotationAnnotationTypeEnum[keyof typeof ReportAnnotationAnnotationTypeEnum];
+
+  /**
+   * The state of the report. May be set to PENDING and later updated.
+   * @public
+   */
+  export const ReportAnnotationResultEnum = {
+    Passed: 'PASSED',
+    Failed: 'FAILED',
+    Skipped: 'SKIPPED',
+    Ignored: 'IGNORED',
+  } as const;
+
+  /**
+   * The state of the report. May be set to PENDING and later updated.
+   * @public
+   */
+  export type ReportAnnotationResultEnum =
+    typeof ReportAnnotationResultEnum[keyof typeof ReportAnnotationResultEnum];
+
+  /**
+   * The severity of the annotation.
+   * @public
+   */
+  export const ReportAnnotationSeverityEnum = {
+    Critical: 'CRITICAL',
+    High: 'HIGH',
+    Medium: 'MEDIUM',
+    Low: 'LOW',
+  } as const;
+
+  /**
+   * The severity of the annotation.
+   * @public
+   */
+  export type ReportAnnotationSeverityEnum =
+    typeof ReportAnnotationSeverityEnum[keyof typeof ReportAnnotationSeverityEnum];
+
+  /**
+   * A key-value element that will be displayed along with the report.
+   * @public
+   */
+  export interface ReportData {
+    /**
+     * A string describing what this data field represents.
+     */
+    title?: string;
+    /**
+     * The type of data contained in the value field. If not provided, then the value will be detected as a boolean, number or string.
+     */
+    type?: ReportDataTypeEnum;
+    /**
+     * The value of the data element.
+     */
+    value?: object;
+  }
+
+  /**
+   * The type of data contained in the value field. If not provided, then the value will be detected as a boolean, number or string.
+   * @public
+   */
+  export const ReportDataTypeEnum = {
+    Boolean: 'BOOLEAN',
+    Date: 'DATE',
+    Duration: 'DURATION',
+    Link: 'LINK',
+    Number: 'NUMBER',
+    Percentage: 'PERCENTAGE',
+    Text: 'TEXT',
+  } as const;
+
+  /**
+   * The type of data contained in the value field. If not provided, then the value will be detected as a boolean, number or string.
+   * @public
+   */
+  export type ReportDataTypeEnum =
+    typeof ReportDataTypeEnum[keyof typeof ReportDataTypeEnum];
 
   /**
    * A Bitbucket repository.
@@ -455,6 +3622,102 @@ export namespace Models {
   }
 
   /**
+   * A group's permission for a given repository.
+   * @public
+   */
+  export interface RepositoryGroupPermission {
+    [key: string]: unknown;
+    group?: Group;
+    links?: BranchingModelSettingsLinks;
+    permission?: RepositoryGroupPermissionPermissionEnum;
+    repository?: Repository;
+    type: string;
+  }
+
+  /**
+   * @public
+   */
+  export const RepositoryGroupPermissionPermissionEnum = {
+    Read: 'read',
+    Write: 'write',
+    Admin: 'admin',
+    None: 'none',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type RepositoryGroupPermissionPermissionEnum =
+    typeof RepositoryGroupPermissionPermissionEnum[keyof typeof RepositoryGroupPermissionPermissionEnum];
+
+  /**
+   * A json object representing the repository's inheritance state values
+   * @public
+   */
+  export interface RepositoryInheritanceState {
+    [key: string]: unknown;
+    override_settings?: object;
+    type: string;
+  }
+
+  /**
+   * A user's permission for a given repository.
+   * @public
+   */
+  export interface RepositoryPermission {
+    [key: string]: unknown;
+    permission?: RepositoryPermissionPermissionEnum;
+    repository?: Repository;
+    type: string;
+    user?: User;
+  }
+
+  /**
+   * @public
+   */
+  export const RepositoryPermissionPermissionEnum = {
+    Read: 'read',
+    Write: 'write',
+    Admin: 'admin',
+    None: 'none',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type RepositoryPermissionPermissionEnum =
+    typeof RepositoryPermissionPermissionEnum[keyof typeof RepositoryPermissionPermissionEnum];
+
+  /**
+   * A user's direct permission for a given repository.
+   * @public
+   */
+  export interface RepositoryUserPermission {
+    [key: string]: unknown;
+    links?: BranchingModelSettingsLinks;
+    permission?: RepositoryUserPermissionPermissionEnum;
+    repository?: Repository;
+    type: string;
+    user?: User;
+  }
+
+  /**
+   * @public
+   */
+  export const RepositoryUserPermissionPermissionEnum = {
+    Read: 'read',
+    Write: 'write',
+    Admin: 'admin',
+    None: 'none',
+  } as const;
+
+  /**
+   * @public
+   */
+  export type RepositoryUserPermissionPermissionEnum =
+    typeof RepositoryUserPermissionPermissionEnum[keyof typeof RepositoryUserPermissionPermissionEnum];
+
+  /**
    * @public
    */
   export interface SearchCodeSearchResult {
@@ -500,6 +3763,144 @@ export namespace Models {
   }
 
   /**
+   * A snippet object.
+   * @public
+   */
+  export interface Snippet extends ModelObject {
+    created_on?: string;
+    creator?: Account;
+    id?: number;
+    is_private?: boolean;
+    owner?: Account;
+    /**
+     * The DVCS used to store the snippet.
+     */
+    scm?: SnippetScmEnum;
+    title?: string;
+    updated_on?: string;
+  }
+
+  /**
+   * The DVCS used to store the snippet.
+   * @public
+   */
+  export const SnippetScmEnum = {
+    Git: 'git',
+  } as const;
+
+  /**
+   * The DVCS used to store the snippet.
+   * @public
+   */
+  export type SnippetScmEnum =
+    typeof SnippetScmEnum[keyof typeof SnippetScmEnum];
+
+  /**
+   * A comment on a snippet.
+   * @public
+   */
+  export interface SnippetComment extends ModelObject {
+    links?: GroupLinks;
+    snippet?: Snippet;
+  }
+
+  /**
+   *
+   * @public
+   */
+  export interface SnippetCommit extends BaseCommit {
+    links?: SnippetCommitLinks;
+    snippet?: Snippet;
+  }
+
+  /**
+   * @public
+   */
+  export interface SnippetCommitLinks {
+    diff?: Link;
+    html?: Link;
+    self?: Link;
+  }
+
+  /**
+   * Represents an SSH public key for a user.
+   * @public
+   */
+  export interface SshAccountKey extends SshKey {
+    owner?: Account;
+  }
+
+  /**
+   * Base type for representing SSH public keys.
+   * @public
+   */
+  export interface SshKey extends ModelObject {
+    /**
+     * The comment parsed from the SSH key (if present)
+     */
+    comment?: string;
+    created_on?: string;
+    /**
+     * The SSH public key value in OpenSSH format.
+     */
+    key?: string;
+    /**
+     * The user-defined label for the SSH key
+     */
+    label?: string;
+    last_used?: string;
+    links?: BranchingModelSettingsLinks;
+    /**
+     * The SSH key's immutable ID.
+     */
+    uuid?: string;
+  }
+
+  /**
+   * @public
+   */
+  export interface StgWestReport extends ModelObject {}
+
+  /**
+   * The mapping of resource/subject types pointing to their individual event types.
+   * @public
+   */
+  export interface SubjectTypes {
+    repository?: SubjectTypesRepository;
+    workspace?: SubjectTypesRepository;
+  }
+
+  /**
+   * @public
+   */
+  export interface SubjectTypesRepository {
+    events?: Link;
+  }
+
+  /**
+   * A tag object, representing a tag in a repository.
+   * @public
+   */
+  export interface Tag {
+    links?: RefLinks;
+    /**
+     * The name of the ref.
+     */
+    name?: string;
+    target?: Commit;
+    type: string;
+    /**
+     * The date that the tag was created, if available
+     */
+    date?: string;
+    /**
+     * The message associated with the tag, if available.
+     */
+    message?: string;
+    tagger?: Author;
+  }
+
+  /**
    * A team object.
    * @public
    */
@@ -518,6 +3919,149 @@ export namespace Models {
     repositories?: Link;
     self?: Link;
   }
+
+  /**
+   * Base type for most resource objects. It defines the common `type` element that identifies an object's type. It also identifies the element as Swagger's `discriminator`.
+   * @public
+   */
+  export interface Treeentry {
+    [key: string]: unknown;
+    commit?: Commit;
+    /**
+     * The path in the repository
+     */
+    path?: string;
+    type: string;
+  }
+
+  /**
+   * A user object.
+   * @public
+   */
+  export interface User extends Account {
+    /**
+     * The user's Atlassian account ID.
+     */
+    account_id?: string;
+    /**
+     * The status of the account. Currently the only possible value is "active", but more values may be added in the future.
+     */
+    account_status?: string;
+    has_2fa_enabled?: boolean;
+    is_staff?: boolean;
+    links?: UserLinks;
+    /**
+     * Account name defined by the owner. Should be used instead of the "username" field. Note that "nickname" cannot be used in place of "username" in URLs and queries, as "nickname" is not guaranteed to be unique.
+     */
+    nickname?: string;
+    website?: string;
+  }
+
+  /**
+   * Links related to a User.
+   * @public
+   */
+  export interface UserLinks {
+    avatar?: Link;
+    html?: Link;
+    repositories?: Link;
+    self?: Link;
+  }
+
+  /**
+   * A version as defined in a repository's issue tracker.
+   * @public
+   */
+  export interface Version extends ModelObject {
+    id?: number;
+    links?: BranchingModelSettingsLinks;
+    name?: string;
+  }
+
+  /**
+   * A Webhook subscription.
+   * @public
+   */
+  export interface WebhookSubscription extends ModelObject {
+    active?: boolean;
+    created_at?: string;
+    /**
+     * A user-defined description of the webhook.
+     */
+    description?: string;
+    /**
+     * The events this webhook is subscribed to.
+     */
+    events?: Set<WebhookSubscriptionEventsEnum>;
+    subject?: object;
+    /**
+     * The type of entity. Set to either `repository` or `workspace` based on where the subscription is defined.
+     */
+    subject_type?: WebhookSubscriptionSubjectTypeEnum;
+    /**
+     * The URL events get delivered to.
+     */
+    url?: string;
+    /**
+     * The webhook's id
+     */
+    uuid?: string;
+  }
+
+  /**
+   * The events this webhook is subscribed to.
+   * @public
+   */
+  export const WebhookSubscriptionEventsEnum = {
+    RepocommitStatusUpdated: 'repo:commit_status_updated',
+    Pullrequestunapproved: 'pullrequest:unapproved',
+    Pullrequestrejected: 'pullrequest:rejected',
+    Issueupdated: 'issue:updated',
+    PullrequestchangesRequestRemoved: 'pullrequest:changes_request_removed',
+    Repodeleted: 'repo:deleted',
+    PullrequestchangesRequestCreated: 'pullrequest:changes_request_created',
+    IssuecommentCreated: 'issue:comment_created',
+    Issuecreated: 'issue:created',
+    Repoupdated: 'repo:updated',
+    PullrequestcommentCreated: 'pullrequest:comment_created',
+    Pullrequestfulfilled: 'pullrequest:fulfilled',
+    Repofork: 'repo:fork',
+    Repocreated: 'repo:created',
+    RepocommitStatusCreated: 'repo:commit_status_created',
+    Pullrequestapproved: 'pullrequest:approved',
+    PullrequestcommentDeleted: 'pullrequest:comment_deleted',
+    Pullrequestcreated: 'pullrequest:created',
+    PullrequestcommentUpdated: 'pullrequest:comment_updated',
+    Pullrequestupdated: 'pullrequest:updated',
+    Repopush: 'repo:push',
+    Repotransfer: 'repo:transfer',
+    Projectupdated: 'project:updated',
+    RepocommitCommentCreated: 'repo:commit_comment_created',
+    Repoimported: 'repo:imported',
+  } as const;
+
+  /**
+   * The events this webhook is subscribed to.
+   * @public
+   */
+  export type WebhookSubscriptionEventsEnum =
+    typeof WebhookSubscriptionEventsEnum[keyof typeof WebhookSubscriptionEventsEnum];
+
+  /**
+   * The type of entity. Set to either `repository` or `workspace` based on where the subscription is defined.
+   * @public
+   */
+  export const WebhookSubscriptionSubjectTypeEnum = {
+    Repository: 'repository',
+    Workspace: 'workspace',
+  } as const;
+
+  /**
+   * The type of entity. Set to either `repository` or `workspace` based on where the subscription is defined.
+   * @public
+   */
+  export type WebhookSubscriptionSubjectTypeEnum =
+    typeof WebhookSubscriptionSubjectTypeEnum[keyof typeof WebhookSubscriptionSubjectTypeEnum];
 
   /**
    * A Bitbucket workspace.
@@ -559,5 +4103,16 @@ export namespace Models {
     repositories?: Link;
     self?: Link;
     snippets?: Link;
+  }
+
+  /**
+   * A Bitbucket workspace membership.
+   *             Links a user to a workspace.
+   * @public
+   */
+  export interface WorkspaceMembership extends ModelObject {
+    links?: BranchingModelSettingsLinks;
+    user?: Account;
+    workspace?: Workspace;
   }
 }
